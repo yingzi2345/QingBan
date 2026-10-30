@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="qb_launcher_background">#2F6B5F</color>
+    <color name="qb_background">#FAF8F4</color>
+    <color name="qb_dark_background">#141614</color>
+</resources>
