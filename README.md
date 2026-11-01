@@ -20,15 +20,7 @@
 
 ## 安装
 
-可安装包：
-
-```text
-dist/qingban-0.2.0-debug.apk
-```
-
 把 APK 传到安卓手机，允许“安装未知来源应用”后安装即可。最低支持 **Android 8.0**（minSdk 26），targetSdk 35。
-
-> 这是使用 Android Debug 证书签名的测试版本，适合先装到手机上体验。后续如需上架应用商店，再生成正式签名的 release 包。
 
 ## 已经能用
 
