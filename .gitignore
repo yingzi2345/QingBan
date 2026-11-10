@@ -12,4 +12,6 @@
 .toolchain
 *.log
 *.jks
+/keystore.properties
+/.workbuddy/
 /app/release/
