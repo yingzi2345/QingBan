@@ -11,3 +11,5 @@
 .cxx
 .toolchain
 *.log
+*.jks
+/app/release/

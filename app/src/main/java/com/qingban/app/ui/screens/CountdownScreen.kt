@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -143,6 +145,7 @@ private fun CountdownCard(
     val days = CountdownCalculator.daysFromToday(countdown.targetDate, countdown.yearly, today)
     val nextDate = CountdownCalculator.nextOccurrence(countdown.targetDate, countdown.yearly, today)
     val isPast = days < 0
+    val dayCount = days.absoluteValue.toString()
 
     Surface(
         onClick = onClick,
@@ -166,8 +169,9 @@ private fun CountdownCard(
             modifier = Modifier.padding(start = 18.dp, end = 8.dp, top = 15.dp, bottom = 15.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // 最少 74dp 保持各卡片标题起点一致；天数很长时允许这一栏变宽，避免数字被裁掉。
             Column(
-                modifier = Modifier.width(74.dp),
+                modifier = Modifier.widthIn(min = 74.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 if (days == 0L) {
@@ -178,14 +182,18 @@ private fun CountdownCard(
                     )
                 } else {
                     Text(
-                        text = days.absoluteValue.toString(),
-                        style = MaterialTheme.typography.displaySmall,
+                        text = dayCount,
+                        style = countdownNumberStyle(
+                            base = MaterialTheme.typography.displaySmall,
+                            digitCount = dayCount.length,
+                        ),
                         color = if (isPast) {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         } else {
                             MaterialTheme.colorScheme.primary
                         },
                         maxLines = 1,
+                        softWrap = false,
                     )
                     Text(
                         text = if (isPast) "天前" else "天后",
@@ -262,6 +270,26 @@ private fun CountdownCard(
             }
         }
     }
+}
+
+/**
+ * 天数可能是 1 位，也可能是 8000、10000 这样的 4~5 位数。数字栏宽度有限，
+ * 所以位数越多字号越小：短天数依旧醒目，长天数也能完整显示而不被裁切。
+ * 统一沿用 displaySmall 的字重与颜色，卡片之间的视觉节奏保持一致。
+ */
+private fun countdownNumberStyle(base: TextStyle, digitCount: Int): TextStyle {
+    val fontSize = when {
+        digitCount <= 2 -> 32.sp
+        digitCount == 3 -> 30.sp
+        digitCount == 4 -> 27.sp
+        digitCount == 5 -> 24.sp
+        else -> 21.sp
+    }
+    return base.copy(
+        fontSize = fontSize,
+        lineHeight = (fontSize.value * 1.18f).sp,
+        letterSpacing = (-0.4).sp,
+    )
 }
 
 @Composable
