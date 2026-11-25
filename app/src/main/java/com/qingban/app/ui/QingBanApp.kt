@@ -60,6 +60,7 @@ import com.qingban.app.domain.EventUi
 import com.qingban.app.domain.Quadrant
 import com.qingban.app.domain.TaskUi
 import com.qingban.app.notifications.NotificationHelper
+import com.qingban.app.notifications.ReminderEvents
 import com.qingban.app.ui.screens.CalendarScreen
 import com.qingban.app.ui.screens.CountdownScreen
 import com.qingban.app.ui.screens.QuadrantScreen
@@ -112,6 +113,10 @@ fun QingBanApp(
     var notificationsGranted by remember {
         mutableStateOf(NotificationHelper.hasPermission(context))
     }
+    var exactAlarmsGranted by remember {
+        mutableStateOf(NotificationHelper.canScheduleExactAlarms(context))
+    }
+    var foregroundReminder by remember { mutableStateOf<ReminderEvents.ReminderEvent?>(null) }
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -142,10 +147,23 @@ fun QingBanApp(
         if (uri != null) pendingImportUri = uri
     }
 
+    val requestExactAlarms: () -> Unit = {
+        NotificationHelper.openExactAlarmSettings(context)
+    }
+
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refreshToday()
         notificationsGranted = NotificationHelper.hasPermission(context)
+        exactAlarmsGranted = NotificationHelper.canScheduleExactAlarms(context)
         viewModel.refreshReminders()
+    }
+
+    // Foreground reminders are shown in-app so the user is not left unaware
+    // when notification permission has not been granted.
+    LaunchedEffect(Unit) {
+        ReminderEvents.events.collect { event ->
+            foregroundReminder = event
+        }
     }
 
     LaunchedEffect(viewModel) {
@@ -267,8 +285,10 @@ fun QingBanApp(
                 SettingsScreen(
                     themeMode = themeMode,
                     notificationsGranted = notificationsGranted,
+                    exactAlarmsGranted = exactAlarmsGranted,
                     onThemeModeChange = viewModel::setThemeMode,
                     onRequestNotifications = requestNotifications,
+                    onRequestExactAlarms = requestExactAlarms,
                     onExport = { exportLauncher.launch(backupFileName) },
                     onImport = {
                         importLauncher.launch(
@@ -401,6 +421,19 @@ fun QingBanApp(
                 }
             },
             onDelete = { countdown: CountdownUi -> viewModel.deleteCountdown(countdown) },
+        )
+    }
+
+    foregroundReminder?.let { reminder ->
+        AlertDialog(
+            onDismissRequest = { foregroundReminder = null },
+            title = { Text(reminder.title) },
+            text = { Text(reminder.body) },
+            confirmButton = {
+                TextButton(onClick = { foregroundReminder = null }) {
+                    Text("知道了")
+                }
+            },
         )
     }
 

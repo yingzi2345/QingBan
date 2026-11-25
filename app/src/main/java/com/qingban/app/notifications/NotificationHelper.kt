@@ -2,6 +2,7 @@ package com.qingban.app.notifications
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -9,7 +10,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -40,9 +43,45 @@ object NotificationHelper {
                 Manifest.permission.POST_NOTIFICATIONS,
             ) == PackageManager.PERMISSION_GRANTED
 
+    fun canScheduleExactAlarms(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true
+        val alarmManager = context.getSystemService(AlarmManager::class.java) ?: return false
+        return alarmManager.canScheduleExactAlarms()
+    }
+
+    /** Opens the system screen where exact alarms can be enabled (Android 12+). */
+    fun openExactAlarmSettings(context: Context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+        runCatching {
+            context.startActivity(
+                Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                    .setData(Uri.parse("package:${context.packageName}"))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        }
+    }
+
+    /** Opens the app details screen so the user can change notification permission. */
+    fun openAppSettings(context: Context) {
+        runCatching {
+            context.startActivity(
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    .setData(Uri.parse("package:${context.packageName}"))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        }
+    }
+
+    /**
+     * Posts the notification. Returns true only when the notification was
+     * actually delivered, so callers can decide whether to keep the alarm alive.
+     */
     @SuppressLint("MissingPermission")
-    fun show(context: Context, title: String, body: String, notificationId: Int) {
-        if (!hasPermission(context)) return
+    fun show(context: Context, title: String, body: String, notificationId: Int): Boolean {
+        if (!hasPermission(context)) return false
+        // The channel can be missing if the app was upgraded while the process
+        // was dead; creating it again is a no-op when it already exists.
+        createChannel(context)
         val contentIntent = PendingIntent.getActivity(
             context,
             0,
@@ -62,6 +101,8 @@ object NotificationHelper {
             .setAutoCancel(true)
             .setContentIntent(contentIntent)
             .build()
-        NotificationManagerCompat.from(context).notify(notificationId, notification)
+        return runCatching {
+            NotificationManagerCompat.from(context).notify(notificationId, notification)
+        }.isSuccess
     }
 }

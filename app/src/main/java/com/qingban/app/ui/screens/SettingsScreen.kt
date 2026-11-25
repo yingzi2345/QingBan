@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.NotificationsNone
+import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -43,8 +44,10 @@ import com.qingban.app.data.ThemeMode
 fun SettingsScreen(
     themeMode: ThemeMode,
     notificationsGranted: Boolean,
+    exactAlarmsGranted: Boolean,
     onThemeModeChange: (ThemeMode) -> Unit,
     onRequestNotifications: () -> Unit,
+    onRequestExactAlarms: () -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
     onBack: () -> Unit,
@@ -129,6 +132,31 @@ fun SettingsScreen(
                         },
                     )
                     Spacer(Modifier.height(10.dp))
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                        SettingsRow(
+                            icon = Icons.Outlined.Alarm,
+                            title = "精确闹钟权限",
+                            subtitle = if (exactAlarmsGranted) {
+                                "已开启。提醒会准时触发。"
+                            } else {
+                                "未开启。到点后提醒可能延迟，点击右侧开启。"
+                            },
+                            trailing = {
+                                if (!exactAlarmsGranted) {
+                                    TextButton(onClick = onRequestExactAlarms) {
+                                        Text("开启")
+                                    }
+                                } else {
+                                    Text(
+                                        text = "已开启",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                            },
+                        )
+                        Spacer(Modifier.height(10.dp))
+                    }
                     Text(
                         text = "有具体时间的待办按设定时间提醒；没有时间的待办和全天日程默认在当天 09:00 提醒。重启手机后提醒会自动恢复。",
                         style = MaterialTheme.typography.bodySmall,

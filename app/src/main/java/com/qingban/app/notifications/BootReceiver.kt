@@ -32,6 +32,9 @@ class BootReceiver : BroadcastReceiver() {
             Intent.ACTION_MY_PACKAGE_REPLACED,
             Intent.ACTION_TIME_CHANGED,
             Intent.ACTION_TIMEZONE_CHANGED,
+            Intent.ACTION_LOCALE_CHANGED,
+            // Inlined as a string constant; keeps minSdk 26 lint clean.
+            "android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED",
         )
     }
 }

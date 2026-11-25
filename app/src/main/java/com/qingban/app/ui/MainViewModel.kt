@@ -130,6 +130,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun canScheduleExactAlarms(): Boolean = app.reminderScheduler.canScheduleExactAlarms()
+
     fun completeTask(task: TaskUi) {
         if (!operationsInFlight.add(task.occurrenceId)) return
         viewModelScope.launch {
